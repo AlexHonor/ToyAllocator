@@ -66,8 +66,39 @@ void* il_alloc(size_t size) {
 }
 
 void il_free(void *ptr) {
-    BlockDescriptor &descriptor = *(BlockDescriptor*)((uint8_t*)ptr - sizeof(BlockDescriptor));
-    descriptor.m_flags &= ~FLAG_BLOCK_ALLOCATED;
+    uint8_t* block_ptr = (uint8_t*)heap_memory;
+    uint8_t* merge_block_ptr = (uint8_t*)heap_memory;
+    bool is_previous_free = true;
+
+    ((BlockDescriptor*)((uint8_t*)ptr - sizeof(BlockDescriptor)))->m_flags = 0;
+
+    while (block_ptr != (uint8_t*)ptr - sizeof(BlockDescriptor) && block_ptr - heap_memory < HEAP_SIZE) {
+        BlockDescriptor& block = *(BlockDescriptor*)block_ptr;
+
+        if (!is_previous_free && !(block.m_flags & FLAG_BLOCK_ALLOCATED)) {
+            merge_block_ptr = block_ptr;
+        }
+
+        is_previous_free = !(block.m_flags & FLAG_BLOCK_ALLOCATED);
+        block_ptr += block.m_size + sizeof(BlockDescriptor);
+    }
+
+    size_t total_size = 0;
+    block_ptr = merge_block_ptr;
+
+    while (block_ptr - heap_memory < HEAP_SIZE) {
+        BlockDescriptor& block = *(BlockDescriptor*)block_ptr;
+        if (block.m_flags & FLAG_BLOCK_ALLOCATED) {
+            break;
+        }
+        total_size += block.m_size + sizeof(BlockDescriptor);
+        block_ptr += block.m_size + sizeof(BlockDescriptor);
+    }
+
+    BlockDescriptor& block = *(BlockDescriptor*)merge_block_ptr;
+    block.m_size = total_size - sizeof(BlockDescriptor);
+    //BlockDescriptor& descriptor = *(BlockDescriptor*)((uint8_t*)ptr - sizeof(BlockDescriptor));
+    //descriptor.m_flags &= ~FLAG_BLOCK_ALLOCATED;
 }
 
 void il_print_heap() {
