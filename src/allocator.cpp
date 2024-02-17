@@ -1,9 +1,11 @@
+#include "allocator.h"
+
 #include <iostream>
 
-const size_t HEAP_SIZE = 1'000; // 1KB
-void *heap_memory;
+static const size_t HEAP_SIZE = 1'000; // 1KB
+static void* heap_memory;
 
-size_t FLAG_BLOCK_ALLOCATED = 0x1;
+static size_t FLAG_BLOCK_ALLOCATED = 0x1;
 
 struct BlockDescriptor {
     size_t  m_size;
@@ -120,27 +122,4 @@ void il_print_heap() {
     }
 
     printf("<------- End Heap Dump ------->\n");
-}
-
-int main() {
-    il_init_heap();
-
-    il_print_heap();
-
-    void *block1 = il_alloc(100);
-    il_print_heap();
-    void *block2 = il_alloc(125);
-    il_print_heap();
-    il_free(block1);
-    il_print_heap();
-    block1 = il_alloc(35);
-    il_print_heap();
-    il_free(block1);
-    il_print_heap();
-    il_free(block2);
-    il_print_heap();
-
-    il_deinit_heap();
-
-    return 0;
 }
